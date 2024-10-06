@@ -1,0 +1,99 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <script>
+      let memory;
+      let wasmInstance;
+      const [log, flush] = (() => {
+        let buffer = [];
+        function flush() {
+          if (buffer.length > 0) {
+            console.log(
+              new TextDecoder('utf-16').decode(
+                new Uint16Array(buffer).valueOf()
+              )
+            );
+            buffer = [];
+          }
+        }
+        function log(ch) {
+          if (ch == '\n'.charCodeAt(0)) {
+            flush();
+          } else if (ch == '\r'.charCodeAt(0)) {
+            /* noop */
+          } else {
+            buffer.push(ch);
+          }
+        }
+        return [log, flush];
+      })();
+      function getString(b) {
+        wasmApi.reset(b);
+        let next;
+        let buf = [];
+        while ((next = wasmApi.next_char(b)) !== -1) {
+          buf.push(next);
+        }
+        return new TextDecoder('utf-16').decode(new Uint16Array(buf).valueOf());
+      }
+      const importObject = {
+        spectest: {
+          print_char: log,
+        },
+        js_string: {
+          new: (offset, length) => {
+            const bytes = new Uint16Array(memory.buffer, offset, length);
+            const string = new TextDecoder('utf-16').decode(bytes);
+            return string;
+          },
+          empty: () => {
+            return '';
+          },
+          log: (string) => {
+            console.log(string);
+          },
+          append: (s1, s2) => {
+            return s1 + s2;
+          },
+        },
+      };
+      WebAssembly.instantiateStreaming(
+        fetch('/target/wasm-gc/release/build/main/main.wasm'),
+        importObject
+      ).then((result) => {
+        wasmApi = result.instance.exports;
+        memory = wasmApi['moonbit.memory'];
+        wasmApi._start();
+        const message = getString(wasmApi.hello());
+        document.getElementById('hello').innerText = message;
+      });
+
+      function fib_onChange() {
+        const arg = document.getElementById('fib_input').value - 0;
+        document.getElementById('fib_arg').innerText = arg;
+
+        const result = wasmApi.fib(arg);
+        const fib_result = (document.getElementById('fib_result').innerText =
+          result);
+      }
+    </script>
+  </head>
+  <body>
+    <header>
+      <h1>hello-moonbit</h1>
+      <p>Open DevTools console</p>
+    </header>
+    <hr />
+    <h2>hello.wasm</h2>
+    <p id="hello"></p>
+    <hr />
+    <h2>fib.wasm</h2>
+    <input
+      type="text"
+      id="fib_input"
+      placeholder="input number"
+      onchange="fib_onChange()"
+    />
+    <p>fib(<span id="fib_arg"></span>) is <span id="fib_result"></span></p>
+  </body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "is-main": true,
+  "import": [
+    "c18t/hello-moonbit/lib",
+    {
+      "path": "c18t/hello-moonbit/lib/fib",
+      "alias": "my_awesome_fibonacci"
+    }
+  ],
+  "link": {
+    "wasm": {
+      "exports": ["hello", "reset", "next_char", "get_offset", "fib"]
+    },
+    "wasm-gc": {
+      "exports": ["hello", "reset", "next_char", "get_offset", "fib"]
+    },
+    "js": {
+      "exports": ["hello", "reset", "next_char", "get_offset", "fib"],
+      "format": "esm"
+    }
+  }
+}
