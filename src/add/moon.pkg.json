@@ -1,0 +1,16 @@
+{
+  "is-main": true,
+  "import": [],
+  "link": {
+    "wasm": {
+      "exports": ["add"]
+    },
+    "wasm-gc": {
+      "exports": ["add"]
+    },
+    "js": {
+      "exports": ["add"],
+      "format": "esm"
+    }
+  }
+}
